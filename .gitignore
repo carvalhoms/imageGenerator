@@ -4,10 +4,6 @@ imgBase/*
 imgResult/*
 !imgResult/.gitkeep
 
-# Legacy folder (can be removed later)
-imgEdit/*
-!imgEdit/.gitkeep
-
 # Ignore system files
 .DS_Store
 */.DS_Store
