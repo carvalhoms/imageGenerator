@@ -238,15 +238,17 @@ if (file_exists($deParaTemp)) {
     foreach ($lines as $line) {
         if (trim($line) !== '') {
             $parts = explode(';', $line);
-            if (count($parts) === 2) {
-                $originalName = $parts[0];
-                $processedName = $parts[1];
+            if (count($parts) === 4) {
+                // Novo formato: codigo;originalFilename;uuid;finalWebpName
+                $codigo = $parts[0];
+                $originalFilename = $parts[1];
+                $uuid = $parts[2];
+                $finalWebpName = $parts[3];
                 
-                // Muda a extensão para .webp e adiciona o caminho imgLarge
-                $pathInfo = pathinfo($processedName);
-                $webpName = 'imgLarge/' . $pathInfo['filename'] . '.webp';
+                // Atualiza para incluir o caminho imgLarge
+                $webpPath = 'imgLarge/' . $uuid . '.webp';
                 
-                $updatedLines[] = $originalName . ';' . $webpName;
+                $updatedLines[] = $codigo . ';' . $originalFilename . ';' . $uuid . ';' . $webpPath;
             }
         }
     }

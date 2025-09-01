@@ -58,7 +58,13 @@ if (file_put_contents($targetPath, $data) !== false) {
     
     // Registra a conversão no arquivo dePara.txt (na pasta temp)
     $logFile = $targetDir . 'dePara.txt';
-    $logEntry = $originalFilename . ';' . $newFilename . "\n";
+    
+    // Extrai o código base do nome original (remove extensão)
+    $baseCode = pathinfo($originalFilename, PATHINFO_FILENAME);
+    $finalWebpName = str_replace('.jpg', '.webp', $newFilename);
+    
+    // Formato: codigo;originalFilename;uuid;finalWebpName
+    $logEntry = $baseCode . ';' . $originalFilename . ';' . $newUUID . ';' . $finalWebpName . "\n";
     file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
     
     echo "Imagem processada e salva: " . $originalFilename . " -> " . $newFilename;
