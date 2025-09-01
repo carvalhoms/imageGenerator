@@ -8,6 +8,9 @@ window.onload = function () {
 
   // Configura os controles
   setupControls();
+
+  // Inicializa a UI (barra oculta, botão visível)
+  toggleProcessingUI(false);
 };
 
 // Função para configurar os controles
@@ -79,7 +82,25 @@ function updateImageSize(sizePercent) {
       }
     `;
   }
-}// Função para carregar lista de imagens da pasta
+}
+
+// Função para controlar a visibilidade da barra de progresso e botão
+function toggleProcessingUI(processing) {
+  const progressContainer = document.getElementById('progressContainer');
+  const generateBtn = document.getElementById('generateBtn');
+
+  if (processing) {
+    // Mostra barra de progresso e oculta botão
+    if (progressContainer) progressContainer.style.display = 'block';
+    if (generateBtn) generateBtn.style.display = 'none';
+  } else {
+    // Oculta barra de progresso e mostra botão
+    if (progressContainer) progressContainer.style.display = 'none';
+    if (generateBtn) generateBtn.style.display = 'block';
+  }
+}
+
+// Função para carregar lista de imagens da pasta
 async function loadImagesList() {
   try {
     const response = await fetch('api/listImages.php');
@@ -143,6 +164,7 @@ window.startGeneration = function () {
   }
 
   isProcessing = true;
+  toggleProcessingUI(true); // Mostra barra e oculta botão
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
   btn.textContent = 'Processando...';
@@ -368,6 +390,7 @@ function finishProcess() {
     btn.disabled = false;
     btn.textContent = 'Gerar Imagens';
     isProcessing = false;
+    toggleProcessingUI(false); // Oculta barra e mostra botão
     updateNavigationButtons(); // Reabilita os botões de navegação
   }, 2000);
 }
