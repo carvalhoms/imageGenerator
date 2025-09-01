@@ -1,0 +1,2 @@
+# Este arquivo garante que a pasta imgBase seja versionada no Git
+# As imagens dentro desta pasta são ignoradas pelo .gitignore
