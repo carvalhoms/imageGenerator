@@ -159,6 +159,88 @@ main {
   overflow-x: auto;
 }
 
+/* Navegação de imagens */
+.image-navigation {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-btn {
+  width: 45px;
+  height: 45px;
+  border: none;
+  background-color: #007cba;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 124, 186, 0.3);
+}
+
+.nav-btn:hover {
+  background-color: #005a8b;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 124, 186, 0.4);
+}
+
+.nav-btn:active {
+  transform: scale(0.95);
+}
+
+.nav-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.nav-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Informações da imagem */
+.image-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 768px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #333;
+  padding: 0 5px;
+  box-sizing: border-box;
+}
+
+.info-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.info-left span:first-child {
+  font-weight: bold;
+  color: #007cba;
+}
+
+.info-right {
+  font-weight: bold;
+  color: #666;
+}
+
+#imageName {
+  color: #333;
+  font-style: italic;
+}
+
+#imageCounter {
+  color: #666;
+}
+
 #grid {
   display: flex;
   justify-content: center;
@@ -170,7 +252,7 @@ main {
   max-width: 768px;
   max-height: 650px;
   background-color: #fff;
-  margin-bottom: 20px;
+  margin-bottom: 5px;
   flex-shrink: 0;
   box-sizing: border-box;
 }

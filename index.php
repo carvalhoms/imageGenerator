@@ -9,10 +9,34 @@
 
 <body>
     <main>
-        <div id="grid">
-            <div id="image"></div>
-            <div id="brand">
-                <img id="imageBrand" src="brand/brand.png" alt="Brand">
+        <!-- Navegação de imagens -->
+        <div class="image-navigation">
+            <button id="prevBtn" class="nav-btn" onclick="navigateImage(-1)">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+            </button>
+            <div id="grid">
+                <div id="image"></div>
+                <div id="brand">
+                    <img id="imageBrand" src="brand/brand.png" alt="Brand">
+                </div>
+            </div>
+            <button id="nextBtn" class="nav-btn" onclick="navigateImage(1)">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Informações da imagem atual -->
+        <div class="image-info">
+            <div class="info-left">
+                <span>Preview: </span>
+                <span id="imageName"></span>
+            </div>
+            <div class="info-right">
+                <span id="imageCounter">Carregando...</span>
             </div>
         </div>
         

@@ -1,5 +1,6 @@
 let isProcessing = false;
 let imagesList = [];
+let currentImageIndex = 0;
 
 window.onload = function () {
   // Carrega a lista de imagens e o preview
@@ -28,11 +29,16 @@ async function loadImagesList() {
     const data = await response.json();
 
     if (data.success && data.images.length > 0) {
-      imagesList = data.images;
+      // Ordena as imagens por nome para manter consistência
+      imagesList = data.images.sort((a, b) => a.filename.localeCompare(b.filename));
+      currentImageIndex = 0;
+
       console.log(`${data.count} imagens encontradas na pasta imgBase`);
 
       // Carrega preview da primeira imagem
       loadPreviewImage();
+      updateNavigationButtons();
+      updateImageInfo();
     } else {
       console.error('Nenhuma imagem encontrada na pasta imgBase');
       alert('Nenhuma imagem encontrada na pasta imgBase. Adicione algumas imagens para processar.');
@@ -84,6 +90,9 @@ window.startGeneration = function () {
   btn.disabled = true;
   btn.textContent = 'Processando...';
 
+  // Desabilita os botões de navegação durante o processamento
+  updateNavigationButtons();
+
   // Mostra a barra de progresso
   showProgress();
 
@@ -92,31 +101,38 @@ window.startGeneration = function () {
 };
 
 function loadPreviewImage() {
-  // Pega a primeira imagem da lista para preview
+  // Verifica se há imagens disponíveis
   if (imagesList.length === 0) {
     console.error('Nenhuma imagem encontrada para preview');
     return;
   }
 
-  let firstImage = imagesList[0];
-  console.log(`Carregando preview: ${firstImage.filename}`);
+  // Garante que o índice está dentro dos limites
+  if (currentImageIndex < 0) currentImageIndex = 0;
+  if (currentImageIndex >= imagesList.length) currentImageIndex = imagesList.length - 1;
+
+  let currentImage = imagesList[currentImageIndex];
+  console.log(`Carregando preview: ${currentImage.filename} (${currentImageIndex + 1}/${imagesList.length})`);
 
   let imageElement = document.getElementById('image');
-  let imageUrl = '/imgBase/' + firstImage.filename;
+  let imageUrl = '/imgBase/' + currentImage.filename;
 
   let img = new Image();
 
   img.onload = function () {
-    console.log(`Preview carregado: ${firstImage.filename}`);
+    console.log(`Preview carregado: ${currentImage.filename}`);
     imageElement.style = `background: url('${imageUrl}') no-repeat; background-size: contain; margin: 0 auto; background-position: center;`;
+    updateImageInfo();
   };
 
   img.onerror = function () {
-    console.error(`Erro ao carregar preview: ${firstImage.filename}`);
+    console.error(`Erro ao carregar preview: ${currentImage.filename}`);
     // Se falhar, tenta a próxima imagem
-    if (imagesList.length > 1) {
-      imagesList.shift(); // Remove a primeira imagem
+    if (currentImageIndex < imagesList.length - 1) {
+      currentImageIndex++;
       loadPreviewImage(); // Tenta novamente
+    } else {
+      console.error('Não foi possível carregar nenhuma imagem válida');
     }
   };
 
@@ -286,5 +302,61 @@ function finishProcess() {
     btn.disabled = false;
     btn.textContent = 'Gerar Imagens';
     isProcessing = false;
+    updateNavigationButtons(); // Reabilita os botões de navegação
   }, 2000);
 }
+
+// Função para navegar entre as imagens
+function navigateImage(direction) {
+  if (isProcessing) return; // Não permite navegação durante o processamento
+
+  const newIndex = currentImageIndex + direction;
+
+  // Verifica os limites
+  if (newIndex >= 0 && newIndex < imagesList.length) {
+    currentImageIndex = newIndex;
+    loadPreviewImage();
+    updateNavigationButtons();
+  }
+}
+
+// Função para atualizar o estado dos botões de navegação
+function updateNavigationButtons() {
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  if (prevBtn) {
+    prevBtn.disabled = currentImageIndex <= 0 || isProcessing;
+  }
+
+  if (nextBtn) {
+    nextBtn.disabled = currentImageIndex >= imagesList.length - 1 || isProcessing;
+  }
+}
+
+// Função para atualizar as informações da imagem
+function updateImageInfo() {
+  const imageCounter = document.getElementById('imageCounter');
+  const imageName = document.getElementById('imageName');
+
+  if (imageCounter && imagesList.length > 0) {
+    imageCounter.textContent = `Imagem ${currentImageIndex + 1} de ${imagesList.length}`;
+  }
+
+  if (imageName && imagesList.length > 0) {
+    imageName.textContent = imagesList[currentImageIndex].filename;
+  }
+}
+
+// Adiciona suporte para navegação via teclado
+document.addEventListener('keydown', function (event) {
+  if (isProcessing) return; // Não permite navegação durante o processamento
+
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    navigateImage(-1);
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    navigateImage(1);
+  }
+});
