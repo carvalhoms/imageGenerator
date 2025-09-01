@@ -14,6 +14,7 @@
                 <img id="imageBrand" src="brand/brand.png" alt="Brand">
             </div>
         </div>
+        <button id="generateBtn" onclick="startGeneration()">Gerar Imagens</button>
     </main>
 
     <script src="js/html2canvas.js"></script>
