@@ -2,11 +2,11 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-$imagesDir = './imgEdit/';
+$imagesDir = '../imgBase/';
 
 // Verifica se a pasta existe
 if (!is_dir($imagesDir)) {
-    echo json_encode(['error' => 'Pasta imgEdit não encontrada']);
+    echo json_encode(['error' => 'Pasta imgBase não encontrada']);
     exit;
 }
 

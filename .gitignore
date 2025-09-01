@@ -1,4 +1,10 @@
 # Ignore files inside image directories but keep the directories
+imgBase/*
+!imgBase/.gitkeep
+imgResult/*
+!imgResult/.gitkeep
+
+# Legacy folder (can be removed later)
 imgEdit/*
 !imgEdit/.gitkeep
 

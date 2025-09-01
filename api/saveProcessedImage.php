@@ -23,30 +23,47 @@ if ($data === false) {
 }
 
 // Define o diretório de destino
-$targetDir = './imgEdit/';
+$targetDir = '../imgResult/';
 
 // Verifica se a pasta existe, se não, cria
 if (!is_dir($targetDir)) {
     if (!mkdir($targetDir, 0755, true)) {
         http_response_code(500);
-        echo "Erro ao criar diretório";
+        echo "Erro ao criar diretório imgResult";
         exit;
     }
 }
 
-// Gera o nome do arquivo processado
-// Mantém o nome original (sobrescreve o arquivo)
-$processedFilename = $originalFilename;
+// Função para gerar UUID v4
+function generateUUID() {
+    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000,
+        mt_rand(0, 0x3fff) | 0x8000,
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+    );
+}
+
+// Gera novo UUID para o arquivo processado
+$newUUID = generateUUID();
+$newFilename = $newUUID . '.' . $extension;
 
 // Caminho completo do arquivo
-$targetPath = $targetDir . $processedFilename;
+$targetPath = $targetDir . $newFilename;
 
-// Salva a imagem (sobrescrevendo o original)
+// Salva a imagem com nome UUID em imgResult
 if (file_put_contents($targetPath, $data) !== false) {
-    echo "Imagem processada e salva: " . $processedFilename;
+    
+    // Registra a conversão no arquivo dePara.txt
+    $logFile = $targetDir . 'dePara.txt';
+    $logEntry = $originalFilename . ';' . $newFilename . "\n";
+    file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
+    
+    echo "Imagem processada e salva: " . $originalFilename . " -> " . $newFilename;
     
     // Log da operação
-    error_log("Imagem processada (sobrescrita): {$originalFilename}");
+    error_log("SAVE_PROCESSED_IMAGE: {$originalFilename} -> {$newFilename} (UUID em imgResult)");
 } else {
     http_response_code(500);
     echo "Erro ao salvar imagem processada";

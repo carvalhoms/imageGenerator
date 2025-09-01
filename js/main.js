@@ -9,22 +9,22 @@ window.onload = function () {
 // Função para carregar lista de imagens da pasta
 async function loadImagesList() {
   try {
-    const response = await fetch('listImages.php');
+    const response = await fetch('api/listImages.php');
     const data = await response.json();
 
     if (data.success && data.images.length > 0) {
       imagesList = data.images;
-      console.log(`${data.count} imagens encontradas na pasta imgEdit`);
+      console.log(`${data.count} imagens encontradas na pasta imgBase`);
 
       // Carrega preview da primeira imagem
       loadPreviewImage();
     } else {
-      console.error('Nenhuma imagem encontrada na pasta imgEdit');
-      alert('Nenhuma imagem encontrada na pasta imgEdit. Adicione algumas imagens para processar.');
+      console.error('Nenhuma imagem encontrada na pasta imgBase');
+      alert('Nenhuma imagem encontrada na pasta imgBase. Adicione algumas imagens para processar.');
     }
   } catch (error) {
     console.error('Erro ao carregar lista de imagens:', error);
-    alert('Erro ao carregar imagens. Verifique se a pasta imgEdit existe.');
+    alert('Erro ao carregar imagens. Verifique se a pasta imgBase existe.');
   }
 }
 
@@ -87,7 +87,7 @@ function loadPreviewImage() {
   console.log(`Carregando preview: ${firstImage.filename}`);
 
   let imageElement = document.getElementById('image');
-  let imageUrl = '/imgEdit/' + firstImage.filename;
+  let imageUrl = '/imgBase/' + firstImage.filename;
 
   let img = new Image();
 
@@ -136,7 +136,7 @@ function processImagesSequentially(index) {
   console.log(`Processando imagem ${index + 1}/${imagesList.length}: ${filename}`);
 
   let imageElement = document.getElementById('image');
-  let imageUrl = '/imgEdit/' + filename;
+  let imageUrl = '/imgBase/' + filename;
 
   let img = new Image();
 
@@ -163,7 +163,7 @@ function processImagesSequentially(index) {
       console.log(`Canvas gerado para ${originalFilename}`);
 
       let ajax = new XMLHttpRequest();
-      ajax.open("POST", "saveProcessedImage.php", true);
+      ajax.open("POST", "api/saveProcessedImage.php", true);
       ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
       let params = "image=" + encodeURIComponent(canvas.toDataURL("image/jpeg", 0.9)) +
