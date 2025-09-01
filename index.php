@@ -14,6 +14,17 @@
                 <img id="imageBrand" src="brand/brand.png" alt="Brand">
             </div>
         </div>
+        
+        <!-- Barra de Progresso -->
+        <div id="progressContainer" class="progress-container">
+            <div class="progress-info">
+                <span id="progressText">Aguardando...</span>
+            </div>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+        </div>
+        
         <button id="generateBtn" onclick="startGeneration()">Gerar Imagens</button>
     </main>
 

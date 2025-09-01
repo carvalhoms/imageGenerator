@@ -7,7 +7,34 @@ window.onload = function () {
   loadPreviewImage();
 };
 
-// Função global para ser chamada pelo botão
+// Funções para controle da barra de progresso
+function showProgress() {
+  const progressContainer = document.getElementById('progressContainer');
+  if (progressContainer) {
+    progressContainer.style.display = 'block';
+    updateProgress(0, 'Preparando...');
+  }
+}
+
+function hideProgress() {
+  const progressContainer = document.getElementById('progressContainer');
+  if (progressContainer) {
+    progressContainer.style.display = 'none';
+  }
+}
+
+function updateProgress(percentage, text = '') {
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+
+  if (progressFill) {
+    progressFill.style.width = percentage + '%';
+  }
+
+  if (progressText && text) {
+    progressText.textContent = text;
+  }
+}// Função global para ser chamada pelo botão
 window.startGeneration = function () {
   if (isProcessing) return;
 
@@ -15,6 +42,9 @@ window.startGeneration = function () {
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
   btn.textContent = 'Processando...';
+
+  // Mostra a barra de progresso
+  showProgress();
 
   // Inicia o processamento das imagens
   processImagesSequentially(0);
@@ -75,16 +105,25 @@ function processImagesSequentially(index) {
   // Verifica se ainda há imagens para processar
   if (index >= data.length) {
     console.log("Todas as imagens foram processadas!");
-    const btn = document.getElementById('generateBtn');
-    btn.disabled = false;
-    btn.textContent = 'Gerar Imagens';
-    isProcessing = false;
+    updateProgress(100, 'Concluído!');
+
+    setTimeout(() => {
+      hideProgress();
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = false;
+      btn.textContent = 'Gerar Imagens';
+      isProcessing = false;
+    }, 1000);
     return;
   }
 
   let currentData = data[index];
   let code = currentData.code;
   let newCode = currentData.newCode || code;
+
+  // Calcula e atualiza o progresso
+  const percentage = (index / data.length) * 100;
+  updateProgress(percentage, `Processando ${index + 1} de ${data.length}`);
 
   console.log(`Processando imagem ${index + 1}/${data.length}: ${code}`);
 
