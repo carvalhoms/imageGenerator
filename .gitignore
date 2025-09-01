@@ -1,8 +1,6 @@
 # Ignore files inside image directories but keep the directories
-imgBase/*
-!imgBase/.gitkeep
-imgResult/*
-!imgResult/.gitkeep
+imgEdit/*
+!imgEdit/.gitkeep
 
 # Ignore system files
 .DS_Store

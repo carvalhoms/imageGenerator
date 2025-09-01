@@ -1,11 +1,32 @@
-import data from "../data/data.js";
-
 let isProcessing = false;
+let imagesList = [];
 
 window.onload = function () {
-  // Carrega preview da primeira imagem encontrada
-  loadPreviewImage();
+  // Carrega a lista de imagens e o preview
+  loadImagesList();
 };
+
+// Função para carregar lista de imagens da pasta
+async function loadImagesList() {
+  try {
+    const response = await fetch('listImages.php');
+    const data = await response.json();
+
+    if (data.success && data.images.length > 0) {
+      imagesList = data.images;
+      console.log(`${data.count} imagens encontradas na pasta imgEdit`);
+
+      // Carrega preview da primeira imagem
+      loadPreviewImage();
+    } else {
+      console.error('Nenhuma imagem encontrada na pasta imgEdit');
+      alert('Nenhuma imagem encontrada na pasta imgEdit. Adicione algumas imagens para processar.');
+    }
+  } catch (error) {
+    console.error('Erro ao carregar lista de imagens:', error);
+    alert('Erro ao carregar imagens. Verifique se a pasta imgEdit existe.');
+  }
+}
 
 // Funções para controle da barra de progresso
 function showProgress() {
@@ -38,6 +59,11 @@ function updateProgress(percentage, text = '') {
 window.startGeneration = function () {
   if (isProcessing) return;
 
+  if (imagesList.length === 0) {
+    alert('Nenhuma imagem disponível para processar. Atualize a página.');
+    return;
+  }
+
   isProcessing = true;
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
@@ -51,59 +77,40 @@ window.startGeneration = function () {
 };
 
 function loadPreviewImage() {
-  // Pega o primeiro item dos dados para preview
-  if (data.length === 0) {
-    console.error('Nenhum dado encontrado para preview');
+  // Pega a primeira imagem da lista para preview
+  if (imagesList.length === 0) {
+    console.error('Nenhuma imagem encontrada para preview');
     return;
   }
 
-  let firstCode = data[0].code;
-  console.log(`Carregando preview: ${firstCode}`);
+  let firstImage = imagesList[0];
+  console.log(`Carregando preview: ${firstImage.filename}`);
 
-  function findPreviewImageWithExtension() {
-    let imageElement = document.getElementById('image');
-    let extensions = ['jpeg', 'png', 'jpg', 'webp'];
-    let extensionIndex = 0;
+  let imageElement = document.getElementById('image');
+  let imageUrl = '/imgEdit/' + firstImage.filename;
 
-    function tryNextExtension() {
-      if (extensionIndex >= extensions.length) {
-        console.error(`Nenhuma imagem encontrada para preview: ${firstCode}`);
-        // Se não encontrar, tenta o próximo item
-        if (data.length > 1) {
-          data.shift(); // Remove o primeiro item
-          loadPreviewImage(); // Tenta novamente
-        }
-        return;
-      }
+  let img = new Image();
 
-      let extension = extensions[extensionIndex];
-      let imageUrl = '/imgBase/' + firstCode + '.' + extension;
+  img.onload = function () {
+    console.log(`Preview carregado: ${firstImage.filename}`);
+    imageElement.style = `background: url('${imageUrl}') no-repeat; background-size: contain; margin: 0 auto; background-position: center;`;
+  };
 
-      let img = new Image();
-
-      img.onload = function () {
-        console.log(`Preview carregado: ${firstCode}.${extension}`);
-        imageElement.style = `background: url('${imageUrl}') no-repeat; background-size: contain; margin: 0 auto; background-position: center;`;
-      };
-
-      img.onerror = function () {
-        console.log(`Extensão ${extension} não encontrada para preview ${firstCode}, tentando próxima...`);
-        extensionIndex++;
-        tryNextExtension();
-      };
-
-      img.src = imageUrl;
+  img.onerror = function () {
+    console.error(`Erro ao carregar preview: ${firstImage.filename}`);
+    // Se falhar, tenta a próxima imagem
+    if (imagesList.length > 1) {
+      imagesList.shift(); // Remove a primeira imagem
+      loadPreviewImage(); // Tenta novamente
     }
+  };
 
-    tryNextExtension();
-  }
-
-  findPreviewImageWithExtension();
+  img.src = imageUrl;
 }
 
 function processImagesSequentially(index) {
   // Verifica se ainda há imagens para processar
-  if (index >= data.length) {
+  if (index >= imagesList.length) {
     console.log("Todas as imagens foram processadas!");
     updateProgress(100, 'Concluído!');
 
@@ -117,76 +124,59 @@ function processImagesSequentially(index) {
     return;
   }
 
-  let currentData = data[index];
-  let code = currentData.code;
-  let newCode = currentData.newCode || code;
+  let currentImage = imagesList[index];
+  let filename = currentImage.filename;
+  let code = currentImage.code;
+  let extension = currentImage.extension;
 
   // Calcula e atualiza o progresso
-  const percentage = (index / data.length) * 100;
-  updateProgress(percentage, `Processando ${index + 1} de ${data.length}`);
+  const percentage = (index / imagesList.length) * 100;
+  updateProgress(percentage, `Processando ${index + 1} de ${imagesList.length}`);
 
-  console.log(`Processando imagem ${index + 1}/${data.length}: ${code}`);
+  console.log(`Processando imagem ${index + 1}/${imagesList.length}: ${filename}`);
 
-  function findImageWithExtension() {
-    let imageElement = document.getElementById('image');
-    let extensions = ['jpeg', 'png', 'jpg', 'webp'];
-    let extensionIndex = 0;
+  let imageElement = document.getElementById('image');
+  let imageUrl = '/imgEdit/' + filename;
 
-    function tryNextExtension() {
-      if (extensionIndex >= extensions.length) {
-        console.error(`Nenhuma imagem encontrada para o código: ${code}`);
-        // Se não encontrou nenhuma imagem, passa para o próximo item
-        processImagesSequentially(index + 1);
-        return;
-      }
+  let img = new Image();
 
-      let extension = extensions[extensionIndex];
-      let imageUrl = '/imgBase/' + code + '.' + extension;
+  img.onload = function () {
+    console.log(`Imagem carregada: ${filename}`);
+    imageElement.style = `background: url('${imageUrl}') no-repeat; background-size: contain; margin: 0 auto; background-position: center;`;
 
-      let img = new Image();
+    // Agora que carregamos a imagem, processamos
+    saveProcessedImage(filename, code, extension);
+  };
 
-      img.onload = function () {
-        console.log(`Imagem encontrada: ${code}.${extension}`);
-        imageElement.style = `background: url('${imageUrl}') no-repeat; background-size: contain; margin: 0 auto; background-position: center;`;
+  img.onerror = function () {
+    console.error(`Erro ao carregar imagem: ${filename}`);
+    // Se falhar, passa para a próxima imagem
+    processImagesSequentially(index + 1);
+  };
 
-        // Agora que encontramos a imagem, salvamos
-        saveImage(extension);
-      };
+  img.src = imageUrl;
 
-      img.onerror = function () {
-        console.log(`Extensão ${extension} não encontrada para ${code}, tentando próxima...`);
-        extensionIndex++;
-        tryNextExtension();
-      };
-
-      img.src = imageUrl;
-    }
-
-    // Inicia a verificação com a primeira extensão
-    tryNextExtension();
-  }
-
-  function saveImage(extension) {
-    console.log(`Preparando para salvar ${code} como ${newCode}.${extension}`);
+  function saveProcessedImage(originalFilename, code, extension) {
+    console.log(`Preparando para processar ${originalFilename}`);
 
     html2canvas(document.getElementById("grid")).then(function (canvas) {
-      console.log(`Canvas gerado para ${code}`);
+      console.log(`Canvas gerado para ${originalFilename}`);
 
       let ajax = new XMLHttpRequest();
-      ajax.open("POST", "saveImage.php", true); // Mudando para assíncrono (true)
+      ajax.open("POST", "saveProcessedImage.php", true);
       ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
       let params = "image=" + encodeURIComponent(canvas.toDataURL("image/jpeg", 0.9)) +
+        "&originalFilename=" + encodeURIComponent(originalFilename) +
         "&code=" + encodeURIComponent(code) +
-        "&newCode=" + encodeURIComponent(newCode) +
         "&extension=" + encodeURIComponent(extension);
 
       ajax.onreadystatechange = function () {
         if (this.readyState == 4) {
           if (this.status == 200) {
-            console.log(`Imagem ${code} salva como ${newCode}.${extension}`);
+            console.log(`Imagem processada: ${originalFilename}`);
           } else {
-            console.error(`Erro ao salvar ${code}: ${this.status} ${this.statusText}`);
+            console.error(`Erro ao salvar ${originalFilename}: ${this.status} ${this.statusText}`);
           }
           // Independentemente do resultado, continua para o próximo item
           processImagesSequentially(index + 1);
@@ -194,19 +184,16 @@ function processImagesSequentially(index) {
       };
 
       ajax.onerror = function () {
-        console.error(`Erro de rede ao salvar ${code}`);
+        console.error(`Erro de rede ao salvar ${originalFilename}`);
         // Em caso de erro, continua para o próximo item
         processImagesSequentially(index + 1);
       };
 
       ajax.send(params);
     }).catch(function (error) {
-      console.error(`Erro ao gerar canvas para ${code}:`, error);
+      console.error(`Erro ao gerar canvas para ${originalFilename}:`, error);
       // Em caso de erro no html2canvas, continua para o próximo item
       processImagesSequentially(index + 1);
     });
   }
-
-  // Inicia o processo de encontrar a imagem com a extensão correta
-  findImageWithExtension();
 }
