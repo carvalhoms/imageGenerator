@@ -1,0 +1,11 @@
+# Ignore image directories
+imgNew/
+imgOld/
+
+# Ignore system files
+.DS_Store
+*/.DS_Store
+
+# Ignore temporary files
+*.tmp
+*.temp

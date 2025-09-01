@@ -159,30 +159,28 @@ main {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 800px;
-  height: 600px;
+  width: 768px;
+  height: 650px;
   background-color: #fff;
   margin-bottom: 20px;
 }
 
 #grid #image {
-  width: 775px;
-  height: 575px;
+  width: 100%;
+  height: 100%;
+  margin-top: 3%;
+  margin-bottom: 3%;
 }
 
 #grid #brand {
   display: flex;
   position: absolute;
-  width: 800px;
-  height: 600px;
   justify-content: center;
   align-items: center;
   mix-blend-mode: multiply;
 }
 
 #grid #brand img {
-  width: 60%;
-  padding: 20px;
   opacity: 0.3;
   mix-blend-mode: multiply;
 }
