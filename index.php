@@ -15,6 +15,13 @@
             </div>
         </div>
         
+        <!-- Controle de Qualidade WebP -->
+        <div class="quality-control">
+            <label for="webpQuality">Qualidade WebP:</label>
+            <input type="range" id="webpQuality" min="1" max="100" value="80">
+            <span id="qualityValue">80%</span>
+        </div>
+        
         <!-- Barra de Progresso -->
         <div id="progressContainer" class="progress-container">
             <div class="progress-info">

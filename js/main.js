@@ -4,7 +4,22 @@ let imagesList = [];
 window.onload = function () {
   // Carrega a lista de imagens e o preview
   loadImagesList();
+
+  // Configura o controle de qualidade WebP
+  setupQualityControl();
 };
+
+// Função para configurar o controle de qualidade
+function setupQualityControl() {
+  const qualitySlider = document.getElementById('webpQuality');
+  const qualityValue = document.getElementById('qualityValue');
+
+  if (qualitySlider && qualityValue) {
+    qualitySlider.addEventListener('input', function () {
+      qualityValue.textContent = this.value + '%';
+    });
+  }
+}
 
 // Função para carregar lista de imagens da pasta
 async function loadImagesList() {
@@ -112,15 +127,10 @@ function processImagesSequentially(index) {
   // Verifica se ainda há imagens para processar
   if (index >= imagesList.length) {
     console.log("Todas as imagens foram processadas!");
-    updateProgress(100, 'Concluído!');
+    updateProgress(95, 'Convertendo para WebP...');
 
-    setTimeout(() => {
-      hideProgress();
-      const btn = document.getElementById('generateBtn');
-      btn.disabled = false;
-      btn.textContent = 'Gerar Imagens';
-      isProcessing = false;
-    }, 1000);
+    // Inicia a conversão para WebP
+    convertToWebp();
     return;
   }
 
@@ -196,4 +206,85 @@ function processImagesSequentially(index) {
       processImagesSequentially(index + 1);
     });
   }
+}
+
+// Função para converter as imagens da pasta .temp para WebP
+function convertToWebp() {
+  const qualitySlider = document.getElementById('webpQuality');
+  const quality = qualitySlider ? qualitySlider.value : 80;
+
+  console.log(`Iniciando conversão WebP com qualidade ${quality}%`);
+
+  // Primeiro step: conversão
+  callWebpConversion(quality, 'convert');
+}
+
+// Função para chamar a conversão WebP com step específico
+function callWebpConversion(quality, step) {
+  const ajax = new XMLHttpRequest();
+  ajax.open("POST", "api/convertToWebp.php", true);
+  ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+  const params = "quality=" + encodeURIComponent(quality) + "&step=" + encodeURIComponent(step);
+
+  ajax.onreadystatechange = function () {
+    if (this.readyState == 4) {
+      if (this.status == 200) {
+        try {
+          const response = JSON.parse(this.responseText);
+
+          if (response.success) {
+            if (response.step === 'convert') {
+              console.log(`Conversão WebP concluída! ${response.converted} arquivos convertidos`);
+              updateProgress(96, 'Gerando thumbnails...');
+
+              // Inicia a geração de thumbnails
+              callWebpConversion(quality, 'thumbnail');
+            } else if (response.step === 'thumbnail') {
+              console.log(`Thumbnails gerados! ${response.generated} arquivos`);
+              updateProgress(100, 'Processo concluído!');
+
+              // Finaliza o processo
+              finishProcess();
+            }
+
+            if (response.errors && response.errors.length > 0) {
+              console.warn('Alguns arquivos apresentaram erro:', response.errors);
+            }
+          } else {
+            console.error(`Erro no step ${step}:`, response.message);
+            updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+            finishProcess();
+          }
+        } catch (e) {
+          console.error(`Erro ao processar resposta do step ${step}:`, e);
+          updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+          finishProcess();
+        }
+      } else {
+        console.error(`Erro HTTP no step ${step}: ${this.status} ${this.statusText}`);
+        updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+        finishProcess();
+      }
+    }
+  };
+
+  ajax.onerror = function () {
+    console.error(`Erro de rede no step ${step}`);
+    updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+    finishProcess();
+  };
+
+  ajax.send(params);
+}
+
+// Função para finalizar o processo
+function finishProcess() {
+  setTimeout(() => {
+    hideProgress();
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = false;
+    btn.textContent = 'Gerar Imagens';
+    isProcessing = false;
+  }, 2000);
 }

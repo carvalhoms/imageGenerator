@@ -22,14 +22,14 @@ if ($data === false) {
     exit;
 }
 
-// Define o diretório de destino
-$targetDir = '../imgResult/';
+// Define o diretório de destino (pasta temporária)
+$targetDir = '../imgResult/.temp/';
 
 // Verifica se a pasta existe, se não, cria
 if (!is_dir($targetDir)) {
     if (!mkdir($targetDir, 0755, true)) {
         http_response_code(500);
-        echo "Erro ao criar diretório imgResult";
+        echo "Erro ao criar diretório imgResult/.temp";
         exit;
     }
 }
@@ -47,15 +47,16 @@ function generateUUID() {
 
 // Gera novo UUID para o arquivo processado
 $newUUID = generateUUID();
-$newFilename = $newUUID . '.' . $extension;
+// HTML2Canvas sempre gera JPEG, então sempre usar extensão .jpg
+$newFilename = $newUUID . '.jpg';
 
 // Caminho completo do arquivo
 $targetPath = $targetDir . $newFilename;
 
-// Salva a imagem com nome UUID em imgResult
+// Salva a imagem com nome UUID em imgResult/.temp
 if (file_put_contents($targetPath, $data) !== false) {
     
-    // Registra a conversão no arquivo dePara.txt
+    // Registra a conversão no arquivo dePara.txt (na pasta temp)
     $logFile = $targetDir . 'dePara.txt';
     $logEntry = $originalFilename . ';' . $newFilename . "\n";
     file_put_contents($logFile, $logEntry, FILE_APPEND | LOCK_EX);
@@ -63,7 +64,7 @@ if (file_put_contents($targetPath, $data) !== false) {
     echo "Imagem processada e salva: " . $originalFilename . " -> " . $newFilename;
     
     // Log da operação
-    error_log("SAVE_PROCESSED_IMAGE: {$originalFilename} -> {$newFilename} (UUID em imgResult)");
+    error_log("SAVE_PROCESSED_IMAGE: {$originalFilename} -> {$newFilename} (UUID em imgResult/.temp)");
 } else {
     http_response_code(500);
     echo "Erro ao salvar imagem processada";
