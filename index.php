@@ -40,11 +40,20 @@
             </div>
         </div>
         
-        <!-- Controle de Qualidade WebP -->
-        <div class="quality-control">
-            <label for="webpQuality">Qualidade WebP:</label>
-            <input type="range" id="webpQuality" min="1" max="100" value="80">
-            <span id="qualityValue">80%</span>
+        <!-- Controles -->
+        <div class="controls-container">
+            <!-- Controle de Qualidade WebP -->
+            <div class="quality-control">
+                <label for="webpQuality">Qualidade WebP:</label>
+                <input type="range" id="webpQuality" min="1" max="100" value="80">
+                <span id="qualityValue">80%</span>
+            </div>
+            
+            <!-- Controle de Tamanho da Imagem -->
+            <div class="image-size-control">
+                <label for="imageSize">Tamanho da Imagem:</label>
+                <input type="range" id="imageSize" min="40" max="140" value="90">
+            </div>
         </div>
         
         <!-- Barra de Progresso -->

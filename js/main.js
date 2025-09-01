@@ -6,12 +6,13 @@ window.onload = function () {
   // Carrega a lista de imagens e o preview
   loadImagesList();
 
-  // Configura o controle de qualidade WebP
-  setupQualityControl();
+  // Configura os controles
+  setupControls();
 };
 
-// Função para configurar o controle de qualidade
-function setupQualityControl() {
+// Função para configurar os controles
+function setupControls() {
+  // Configura o controle de qualidade WebP
   const qualitySlider = document.getElementById('webpQuality');
   const qualityValue = document.getElementById('qualityValue');
 
@@ -20,9 +21,65 @@ function setupQualityControl() {
       qualityValue.textContent = this.value + '%';
     });
   }
+
+  // Configura o controle de tamanho da imagem
+  const sizeSlider = document.getElementById('imageSize');
+
+  if (sizeSlider) {
+    sizeSlider.addEventListener('input', function () {
+      updateImageSize(this.value);
+    });
+  }
+
+  // Configura os botões de navegação
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', function () {
+      navigateImage(-1);
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', function () {
+      navigateImage(1);
+    });
+  }
 }
 
-// Função para carregar lista de imagens da pasta
+// Variável para controlar o tamanho da imagem
+let currentImageSize = 90; // 90% como padrão
+
+// Função para atualizar o tamanho da imagem
+function updateImageSize(sizePercent) {
+  currentImageSize = sizePercent;
+  const imageElement = document.getElementById('image');
+  if (imageElement) {
+    // Remove estilos inline de tamanho para evitar conflito com html2canvas
+    imageElement.style.width = '';
+    imageElement.style.height = '';
+
+    // Calcula o tamanho baseado na porcentagem (40% a 140%)
+    const widthPx = Math.round(768 * (sizePercent / 100));
+    const heightPx = Math.round(650 * (sizePercent / 100));
+
+    // Cria ou atualiza uma regra CSS dinâmica
+    let styleElement = document.getElementById('dynamic-image-size');
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = 'dynamic-image-size';
+      document.head.appendChild(styleElement);
+    }
+
+    styleElement.textContent = `
+      #grid #image {
+        width: ${widthPx}px !important;
+        height: ${heightPx}px !important;
+      }
+    `;
+  }
+}// Função para carregar lista de imagens da pasta
 async function loadImagesList() {
   try {
     const response = await fetch('api/listImages.php');
@@ -121,8 +178,17 @@ function loadPreviewImage() {
 
   img.onload = function () {
     console.log(`Preview carregado: ${currentImage.filename}`);
-    imageElement.style = `background: url('${imageUrl}') no-repeat; background-size: contain; margin: 0 auto; background-position: center;`;
+
+    // Aplica o background da imagem
+    imageElement.style.background = `url('${imageUrl}') no-repeat`;
+    imageElement.style.backgroundSize = 'contain';
+    imageElement.style.backgroundPosition = 'center';
+    imageElement.style.margin = '0 auto';
+
     updateImageInfo();
+
+    // Aplica o tamanho atual da imagem
+    updateImageSize(currentImageSize);
   };
 
   img.onerror = function () {
