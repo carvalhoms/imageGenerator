@@ -245,7 +245,7 @@ function processImagesSequentially(index) {
 
   // Calcula e atualiza o progresso
   const percentage = (index / imagesList.length) * 100;
-  updateProgress(percentage, `Processando ${index + 1} de ${imagesList.length}`);
+  updateProgress(percentage, `Gerando Imagem ${index + 1} de ${imagesList.length}`);
 
   console.log(`Processando imagem ${index + 1}/${imagesList.length}: ${filename}`);
 
@@ -324,32 +324,78 @@ function convertToWebp() {
 }
 
 // Função para chamar a conversão WebP com step específico
-function callWebpConversion(quality, step) {
+function callWebpConversion(quality, step, offset = 0) {
   const ajax = new XMLHttpRequest();
   ajax.open("POST", "api/convertToWebp.php", true);
   ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-  const params = "quality=" + encodeURIComponent(quality) + "&step=" + encodeURIComponent(step);
+  const params = "quality=" + encodeURIComponent(quality) +
+    "&step=" + encodeURIComponent(step) +
+    "&batchSize=10" +
+    "&offset=" + encodeURIComponent(offset);
 
   ajax.onreadystatechange = function () {
     if (this.readyState == 4) {
       if (this.status == 200) {
         try {
-          const response = JSON.parse(this.responseText);
+          // Verifica se a resposta parece ser JSON válido
+          let responseText = this.responseText.trim();
+
+          // Se a resposta começar com HTML (erro PHP), trata como erro
+          if (responseText.startsWith('<') || responseText.startsWith('<!')) {
+            console.error(`Resposta HTML recebida ao invés de JSON no step ${step}:`, responseText.substring(0, 200) + '...');
+            updateProgress(100, `Erro de servidor no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+            finishProcess();
+            return;
+          }
+
+          const response = JSON.parse(responseText);
 
           if (response.success) {
             if (response.step === 'convert') {
-              console.log(`Conversão WebP concluída! ${response.converted} arquivos convertidos`);
-              updateProgress(96, 'Gerando thumbnails...');
+              const progressPercent = Math.round((response.processed / response.total) * 90); // 90% para conversão
+              console.log(`Lote de conversão processado: ${response.converted} arquivos (${response.processed}/${response.total})`);
+              updateProgress(progressPercent, `Convertendo em WebP ${response.processed}/${response.total}`);
 
-              // Inicia a geração de thumbnails
-              callWebpConversion(quality, 'thumbnail');
+              if (response.isComplete) {
+                console.log(`Conversão WebP concluída! Total: ${response.processed} arquivos convertidos`);
+
+                // Se está processando arquivo de índice, mostra mensagem específica
+                if (response.processingIndex) {
+                  updateProgress(88, 'Gerando arquivo de índice...');
+                  setTimeout(() => {
+                    updateProgress(90, 'Preparando thumbnails...');
+                    callWebpConversion(quality, 'thumbnail');
+                  }, 1000);
+                } else {
+                  updateProgress(90, 'Preparando thumbnails...');
+                  callWebpConversion(quality, 'thumbnail');
+                }
+              } else {
+                // Continua com o próximo lote
+                setTimeout(() => {
+                  callWebpConversion(quality, 'convert', response.nextOffset);
+                }, 100); // Pequena pausa entre lotes
+              }
             } else if (response.step === 'thumbnail') {
-              console.log(`Thumbnails gerados! ${response.generated} arquivos`);
-              updateProgress(100, 'Processo concluído!');
+              const progressPercent = 90 + Math.round((response.processed / response.total) * 8); // 8% para thumbnails (90-98%)
+              console.log(`Lote de thumbnails processado: ${response.generated} arquivos (${response.processed}/${response.total})`);
+              updateProgress(progressPercent, `Gerando thumbnails ${response.processed}/${response.total}`);
 
-              // Finaliza o processo
-              finishProcess();
+              if (response.isComplete) {
+                console.log(`Thumbnails gerados! Total: ${response.processed} arquivos`);
+                updateProgress(98, 'Gerando arquivo de índice...');
+                // Finaliza o processo
+                setTimeout(() => {
+                  updateProgress(100, 'Processo concluído!');
+                  finishProcess();
+                }, 500);
+              } else {
+                // Continua com o próximo lote
+                setTimeout(() => {
+                  callWebpConversion(quality, 'thumbnail', response.nextOffset);
+                }, 100); // Pequena pausa entre lotes
+              }
             }
 
             if (response.errors && response.errors.length > 0) {
@@ -362,6 +408,7 @@ function callWebpConversion(quality, step) {
           }
         } catch (e) {
           console.error(`Erro ao processar resposta do step ${step}:`, e);
+          console.error('Resposta recebida:', this.responseText.substring(0, 500) + (this.responseText.length > 500 ? '...' : ''));
           updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
           finishProcess();
         }
