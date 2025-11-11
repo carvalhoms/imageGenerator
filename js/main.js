@@ -163,6 +163,10 @@ window.startGeneration = function () {
     return;
   }
 
+  console.log('=== INICIANDO PROCESSAMENTO ===');
+  console.log(`Total de imagens a processar: ${imagesList.length}`);
+  console.log('Lista de imagens:', imagesList);
+
   isProcessing = true;
   toggleProcessingUI(true); // Mostra barra e oculta botão
   const btn = document.getElementById('generateBtn');
@@ -230,7 +234,8 @@ function loadPreviewImage() {
 function processImagesSequentially(index) {
   // Verifica se ainda há imagens para processar
   if (index >= imagesList.length) {
-    console.log("Todas as imagens foram processadas!");
+    console.log("=== TODAS AS IMAGENS PROCESSADAS ===");
+    console.log(`Total processado: ${index}/${imagesList.length} imagens`);
     updateProgress(95, 'Convertendo para WebP...');
 
     // Inicia a conversão para WebP
@@ -247,7 +252,10 @@ function processImagesSequentially(index) {
   const percentage = (index / imagesList.length) * 100;
   updateProgress(percentage, `Gerando Imagem ${index + 1} de ${imagesList.length}`);
 
-  console.log(`Processando imagem ${index + 1}/${imagesList.length}: ${filename}`);
+  console.log(`=== PROCESSANDO IMAGEM ${index + 1}/${imagesList.length} ===`);
+  console.log(`Arquivo: ${filename}`);
+  console.log(`Code: ${code}`);
+  console.log(`Extension: ${extension}`);
 
   let imageElement = document.getElementById('image');
   let imageUrl = '/imgBase/' + filename;
@@ -255,58 +263,73 @@ function processImagesSequentially(index) {
   let img = new Image();
 
   img.onload = function () {
-    console.log(`Imagem carregada: ${filename}`);
+    console.log(`✅ Imagem carregada com sucesso: ${filename}`);
     imageElement.style = `background: url('${imageUrl}') no-repeat; background-size: contain; margin: 0 auto; background-position: center;`;
 
     // Agora que carregamos a imagem, processamos
+    console.log(`Iniciando saveProcessedImage para: ${filename}`);
     saveProcessedImage(filename, code, extension);
   };
 
   img.onerror = function () {
-    console.error(`Erro ao carregar imagem: ${filename}`);
+    console.error(`❌ Erro ao carregar imagem: ${filename}`);
+    console.error(`URL testada: ${imageUrl}`);
     // Se falhar, passa para a próxima imagem
+    console.log(`Pulando para próxima imagem (${index + 1} -> ${index + 2})`);
     processImagesSequentially(index + 1);
   };
 
   img.src = imageUrl;
 
   function saveProcessedImage(originalFilename, code, extension) {
-    console.log(`Preparando para processar ${originalFilename}`);
+    console.log(`🔄 Preparando para processar ${originalFilename}`);
+    console.log(`Dados: code=${code}, extension=${extension}`);
 
     html2canvas(document.getElementById("grid")).then(function (canvas) {
-      console.log(`Canvas gerado para ${originalFilename}`);
+      console.log(`🖼️ Canvas gerado para ${originalFilename}`);
+      console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
 
       let ajax = new XMLHttpRequest();
       ajax.open("POST", "api/saveProcessedImage.php", true);
       ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-      let params = "image=" + encodeURIComponent(canvas.toDataURL("image/jpeg", 0.9)) +
+      let dataURL = canvas.toDataURL("image/jpeg", 0.9);
+      let params = "image=" + encodeURIComponent(dataURL) +
         "&originalFilename=" + encodeURIComponent(originalFilename) +
         "&code=" + encodeURIComponent(code) +
         "&extension=" + encodeURIComponent(extension);
 
+      console.log(`📤 Enviando dados para API - Tamanho: ${Math.round(dataURL.length/1024)}KB`);
+
       ajax.onreadystatechange = function () {
         if (this.readyState == 4) {
           if (this.status == 200) {
-            console.log(`Imagem processada: ${originalFilename}`);
+            console.log(`✅ Imagem processada com sucesso: ${originalFilename}`);
+            console.log(`Resposta da API: ${this.responseText}`);
           } else {
-            console.error(`Erro ao salvar ${originalFilename}: ${this.status} ${this.statusText}`);
+            console.error(`❌ Erro HTTP ao salvar ${originalFilename}: ${this.status} ${this.statusText}`);
+            console.error(`Resposta: ${this.responseText}`);
           }
           // Independentemente do resultado, continua para o próximo item
+          console.log(`🔄 Continuando para próxima imagem (${index + 1} -> ${index + 2})`);
           processImagesSequentially(index + 1);
         }
       };
 
       ajax.onerror = function () {
-        console.error(`Erro de rede ao salvar ${originalFilename}`);
+        console.error(`❌ Erro de rede ao salvar ${originalFilename}`);
+        console.error('Network error details:', this);
         // Em caso de erro, continua para o próximo item
+        console.log(`🔄 Continuando para próxima imagem devido ao erro de rede`);
         processImagesSequentially(index + 1);
       };
 
       ajax.send(params);
     }).catch(function (error) {
-      console.error(`Erro ao gerar canvas para ${originalFilename}:`, error);
+      console.error(`❌ Erro ao gerar canvas para ${originalFilename}:`, error);
+      console.error('Canvas error details:', error.stack);
       // Em caso de erro no html2canvas, continua para o próximo item
+      console.log(`🔄 Continuando para próxima imagem devido ao erro de canvas`);
       processImagesSequentially(index + 1);
     });
   }
@@ -317,112 +340,73 @@ function convertToWebp() {
   const qualitySlider = document.getElementById('webpQuality');
   const quality = qualitySlider ? qualitySlider.value : 80;
 
-  console.log(`Iniciando conversão WebP com qualidade ${quality}%`);
+  console.log('=== INICIANDO CONVERSÃO WEBP ===');
+  console.log(`Qualidade configurada: ${quality}%`);
 
-  // Primeiro step: conversão
-  callWebpConversion(quality, 'convert');
+  // UMA SÓ CHAMADA - SIMPLES!
+  callWebpConversion(quality);
 }
 
-// Função para chamar a conversão WebP com step específico
-function callWebpConversion(quality, step, offset = 0) {
+// Função para chamar a conversão WebP (SIMPLIFICADA - UMA SÓ CHAMADA)
+function callWebpConversion(quality) {
+  console.log(`🔄 Chamando API convertToWebp - Quality: ${quality}`);
+
   const ajax = new XMLHttpRequest();
   ajax.open("POST", "api/convertToWebp.php", true);
   ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-  const params = "quality=" + encodeURIComponent(quality) +
-    "&step=" + encodeURIComponent(step) +
-    "&batchSize=10" +
-    "&offset=" + encodeURIComponent(offset);
+  const params = "quality=" + encodeURIComponent(quality);
+  console.log(`📤 Parâmetros enviados: ${params}`);
 
   ajax.onreadystatechange = function () {
     if (this.readyState == 4) {
+      console.log(`📥 Resposta recebida - Status: ${this.status}`);
+
       if (this.status == 200) {
         try {
-          // Verifica se a resposta parece ser JSON válido
           let responseText = this.responseText.trim();
+          console.log(`📋 Resposta: ${responseText.substring(0, 200)}`);
 
-          // Se a resposta começar com HTML (erro PHP), trata como erro
           if (responseText.startsWith('<') || responseText.startsWith('<!')) {
-            console.error(`Resposta HTML recebida ao invés de JSON no step ${step}:`, responseText.substring(0, 200) + '...');
-            updateProgress(100, `Erro de servidor no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+            console.error(`❌ Resposta HTML:`, responseText.substring(0, 200));
+            updateProgress(100, 'Erro de servidor');
             finishProcess();
             return;
           }
 
           const response = JSON.parse(responseText);
+          console.log(`✅ Resposta:`, response);
 
           if (response.success) {
-            if (response.step === 'convert') {
-              const progressPercent = Math.round((response.processed / response.total) * 90); // 90% para conversão
-              console.log(`Lote de conversão processado: ${response.converted} arquivos (${response.processed}/${response.total})`);
-              updateProgress(progressPercent, `Convertendo em WebP ${response.processed}/${response.total}`);
-
-              if (response.isComplete) {
-                console.log(`Conversão WebP concluída! Total: ${response.processed} arquivos convertidos`);
-
-                // Se está processando arquivo de índice, mostra mensagem específica
-                if (response.processingIndex) {
-                  updateProgress(88, 'Gerando arquivo de índice...');
-                  setTimeout(() => {
-                    updateProgress(90, 'Preparando thumbnails...');
-                    callWebpConversion(quality, 'thumbnail');
-                  }, 1000);
-                } else {
-                  updateProgress(90, 'Preparando thumbnails...');
-                  callWebpConversion(quality, 'thumbnail');
-                }
-              } else {
-                // Continua com o próximo lote
-                setTimeout(() => {
-                  callWebpConversion(quality, 'convert', response.nextOffset);
-                }, 100); // Pequena pausa entre lotes
-              }
-            } else if (response.step === 'thumbnail') {
-              const progressPercent = 90 + Math.round((response.processed / response.total) * 8); // 8% para thumbnails (90-98%)
-              console.log(`Lote de thumbnails processado: ${response.generated} arquivos (${response.processed}/${response.total})`);
-              updateProgress(progressPercent, `Gerando thumbnails ${response.processed}/${response.total}`);
-
-              if (response.isComplete) {
-                console.log(`Thumbnails gerados! Total: ${response.processed} arquivos`);
-                updateProgress(98, 'Gerando arquivo de índice...');
-                // Finaliza o processo
-                setTimeout(() => {
-                  updateProgress(100, 'Processo concluído!');
-                  finishProcess();
-                }, 500);
-              } else {
-                // Continua com o próximo lote
-                setTimeout(() => {
-                  callWebpConversion(quality, 'thumbnail', response.nextOffset);
-                }, 100); // Pequena pausa entre lotes
-              }
-            }
-
-            if (response.errors && response.errors.length > 0) {
-              console.warn('Alguns arquivos apresentaram erro:', response.errors);
-            }
+            updateProgress(90, `Convertidos: ${response.converted} arquivos`);
+            setTimeout(() => {
+              updateProgress(95, `Thumbnails: ${response.thumbnails} gerados`);
+              setTimeout(() => {
+                updateProgress(100, 'Processo concluído!');
+                finishProcess();
+              }, 500);
+            }, 500);
           } else {
-            console.error(`Erro no step ${step}:`, response.message);
-            updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+            console.error('Erro na conversão:', response.message);
+            updateProgress(100, 'Erro na conversão');
             finishProcess();
           }
         } catch (e) {
-          console.error(`Erro ao processar resposta do step ${step}:`, e);
-          console.error('Resposta recebida:', this.responseText.substring(0, 500) + (this.responseText.length > 500 ? '...' : ''));
-          updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+          console.error('Erro ao processar resposta:', e);
+          updateProgress(100, 'Erro na conversão');
           finishProcess();
         }
       } else {
-        console.error(`Erro HTTP no step ${step}: ${this.status} ${this.statusText}`);
-        updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+        console.error(`Erro HTTP: ${this.status} ${this.statusText}`);
+        updateProgress(100, 'Erro HTTP');
         finishProcess();
       }
     }
   };
 
   ajax.onerror = function () {
-    console.error(`Erro de rede no step ${step}`);
-    updateProgress(100, `Erro no ${step === 'convert' ? 'conversão' : 'thumbnails'}`);
+    console.error('Erro de rede');
+    updateProgress(100, 'Erro de rede');
     finishProcess();
   };
 
